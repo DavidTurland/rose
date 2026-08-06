@@ -53,6 +53,7 @@ AC_DEFUN([ROSE_SUPPORT_SUMMARY],[
     echo "    filesystem library               ${BOOST_FILESYSTEM_LIB:-none}"
     echo "    iostreams library                ${BOOST_IOSTREAMS_LIB:-none}"
     echo "    program options library          ${BOOST_PROGRAM_OPTIONS_LIB:-none}"
+    echo "    process library                  ${BOOST_PROCESS_LIB:-none}"
     echo "    python library                   ${BOOST_PYTHON_LIB:-none}"
     echo "    random library                   ${BOOST_RANDOM_LIB:-none}"
     echo "    regex library                    ${BOOST_REGEX_LIB:-none}"
