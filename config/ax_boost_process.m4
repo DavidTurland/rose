@@ -55,8 +55,8 @@ AC_DEFUN([AX_BOOST_PROCESS],
       [AC_LANG_PUSH([C++])
        CXXFLAGS_SAVE=$CXXFLAGS
 
-       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/process.hpp>]],
-         [[boost::process::child child;]])],
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <boost/process/v1/child.hpp>]],
+         [[boost::process::v1::child child;]])],
          ax_cv_boost_process=yes, ax_cv_boost_process=no)
        CXXFLAGS=$CXXFLAGS_SAVE
        AC_LANG_POP([C++])

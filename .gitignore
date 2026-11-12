@@ -10,6 +10,7 @@
 *.dump2
 *.o
 # /
+# EDG/
 Makefile.in
 /aclocal.m4
 /rose_config.h.in
@@ -19,6 +20,11 @@ Makefile.in
 /libltdl
 /configure.orig
 /build-rose.sh
+
+/install/
+/build_rose/
+/deps/
+/src/build/
 
 # Integrated Development Evironment files
 GPATH
@@ -73,3 +79,7 @@ GTAGS
 # Internal build directories
 /_build
 /_build_*
+stamp-h.in
+stamp-h1.in
+
+config.log

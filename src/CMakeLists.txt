@@ -928,6 +928,7 @@ target_link_libraries(ROSE_DLL
     # System and platform libraries (rt, dl, m, c, etc.)
     # Note: Threads moved to PUBLIC above
     ${_rose_system_libraries}
+    #DMT EDG
 )
 
 # Explicitly add -pthread flag for both compilation and linking
@@ -1055,7 +1056,9 @@ else()
 endif()
 
 # ???
-if(NOT BINARY_EDG)
+if(BINARY_EDG)
+  target_link_libraries(ROSE_DLL PRIVATE EDG)
+else()
   add_definitions(-DUSE_FAKE_EDG)
 endif()
 
@@ -1122,23 +1125,29 @@ endif()
 ########################################################################################################################
 # testSharedRoseLib -- a basic test to make sure the ROSE library works
 ########################################################################################################################
+
+#add_library(EDG STATIC IMPORTED)
+#add_dependencies(EDG EDGSignature)
+#set_property(TARGET EDG PROPERTY IMPORTED_LOCATION
+#  ${CMAKE_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs/libroseEDG.a)
+
 remove_definitions(-DROSE_DLL_EXPORTS)
 add_executable(testSharedRoseLib testRoseLib.C)
-target_link_libraries(testSharedRoseLib ROSE_DLL ${link_with_libraries})
+target_link_libraries(testSharedRoseLib ROSE_DLL ${link_with_libraries} ) #  EDG) DMT WAS HERE
 
 ########################################################################################################################
 # The rose-config tool. DEPRECATED 2025-10-10: Use pkg-config or RoseConfig.cfg
 ########################################################################################################################
 add_definitions(-DLIBDIR="${CMAKE_INSTALL_PREFIX}/${ROSE_LIB_DIR_NAME}") #LIB_INSTALL_DIR ?
 add_executable(rose-config rose-config.C)
-target_link_libraries(rose-config ROSE_DLL ${link_with_libraries})
+target_link_libraries(rose-config ROSE_DLL ${link_with_libraries} ) #  EDG) DMT WAS HERE
 install(TARGETS rose-config DESTINATION bin)
 
 ########################################################################################################################
-# The rose-compiler tool
+# The rose-compiler tool  
 ########################################################################################################################
 add_executable(rose-compiler rose-compiler.C)
-target_link_libraries(rose-compiler ROSE_DLL ${link_with_libraries})
+target_link_libraries(rose-compiler ROSE_DLL ${link_with_libraries} ) #  EDG) DMT WAS HERE
 install(TARGETS rose-compiler DESTINATION bin)
 
 ########################################################################################################################

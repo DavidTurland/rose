@@ -536,6 +536,8 @@ static bool ofs_match_clause_varlist(omp_construct_enum clausetype)
     case e_lastprivate:
     case e_private:
     case e_shared:
+    case e_aligned:
+    case e_linear:
       {
         strcpy (clause_name, OmpSupport::toString(clausetype).c_str());
         break;
@@ -611,6 +613,12 @@ static bool ofs_match_clause_expression (omp_construct_enum clausetype)
     case e_collapse:
     case e_if:
     case e_num_threads:
+    case e_grainsize:
+    case e_num_tasks:
+    case e_thread_limit:
+    case e_num_teams:
+    case e_simdlen:
+    case e_safelen:
       {
         strcpy (clause_name, OmpSupport::toString(clausetype).c_str());
         break;
@@ -675,6 +683,179 @@ static bool ofs_match_clause_if()
 static bool ofs_match_clause_num_threads()
 {
   return ofs_match_clause_expression(e_num_threads);
+}
+
+static bool ofs_match_clause_grainsize()
+{
+  return ofs_match_clause_expression(e_grainsize);
+}
+
+static bool ofs_match_clause_num_tasks()
+{
+  return ofs_match_clause_expression(e_num_tasks);
+}
+
+static bool ofs_match_clause_thread_limit()
+{
+  return ofs_match_clause_expression(e_thread_limit);
+}
+
+static bool ofs_match_clause_num_teams()
+{
+  return ofs_match_clause_expression(e_num_teams);
+}
+
+static bool ofs_match_clause_simdlen()
+{
+  return ofs_match_clause_expression(e_simdlen);
+}
+
+static bool ofs_match_clause_safelen()
+{
+  return ofs_match_clause_expression(e_safelen);
+}
+
+static bool ofs_match_clause_proc_bind()
+{
+  const char* old_char = c_char;
+  if (ofs_match_substr("proc_bind", false))
+  {
+    ompattribute->addClause(e_proc_bind);
+    omptype = e_proc_bind;
+    if (!ofs_match_char('('))
+    {
+      printf("error in proc_bind(xx) match: no starting '(' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    if (ofs_match_substr("master", false))
+      ompattribute->setProcBindPolicy(e_proc_bind_master);
+    else if (ofs_match_substr("close", false))
+      ompattribute->setProcBindPolicy(e_proc_bind_close);
+    else if (ofs_match_substr("spread", false))
+      ompattribute->setProcBindPolicy(e_proc_bind_spread);
+    else
+    {
+      printf("error in proc_bind(value) match: no legal value is found for %s\n", old_char);
+      ROSE_ABORT();
+    }
+    if (!ofs_match_char(')'))
+    {
+      printf("error in proc_bind() match: no end ')' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    return true;
+  }
+  c_char = old_char;
+  return false;
+}
+
+static bool ofs_match_clause_depend()
+{
+  const char* old_char = c_char;
+  if (ofs_match_substr("depend", false))
+  {
+    ompattribute->addClause(e_depend);
+    omptype = e_unknown;
+    if (!ofs_match_char('('))
+    {
+      printf("error in depend(xx:varlist) match: no starting '(' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    if (ofs_match_substr("in", false))
+    {
+      ompattribute->setDependenceType(e_depend_in);
+      omptype = e_depend_in;
+    }
+    else if (ofs_match_substr("out", false))
+    {
+      ompattribute->setDependenceType(e_depend_out);
+      omptype = e_depend_out;
+    }
+    else if (ofs_match_substr("inout", false))
+    {
+      ompattribute->setDependenceType(e_depend_inout);
+      omptype = e_depend_inout;
+    }
+    else
+    {
+      printf("error in depend(type:varlist) match: no legal dependence type is found for %s\n", old_char);
+      ROSE_ABORT();
+    }
+    if (!ofs_match_char(':'))
+    {
+      printf("error in depend(type:varlist) match: no ':' is found for %s\n", old_char);
+      ROSE_ABORT();
+    }
+    if (!ofs_match_varlist())
+    {
+      printf("error in depend(type:varlist) match during varlist for %s\n", old_char);
+      ROSE_ABORT();
+    }
+    omptype = e_unknown;
+    return true;
+  }
+  c_char = old_char;
+  return false;
+}
+
+static bool ofs_match_clause_defaultmap()
+{
+  const char* old_char = c_char;
+  if (ofs_match_substr("defaultmap", false))
+  {
+    ompattribute->addClause(e_defaultmap);
+    omptype = e_defaultmap;
+    if (!ofs_match_char('('))
+    {
+      printf("error in defaultmap(xx) match: no starting '(' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    if (ofs_match_substr("none", false) || ofs_match_substr("default", false))
+    {
+      if (!ofs_match_char(')'))
+      {
+        printf("error in defaultmap() match: no end ')' is found for %s.\n", old_char);
+        ROSE_ABORT();
+      }
+      return true;
+    }
+    printf("error in defaultmap(value) match: no legal value is found for %s\n", old_char);
+    ROSE_ABORT();
+  }
+  c_char = old_char;
+  return false;
+}
+
+static bool ofs_match_clause_dist_schedule()
+{
+  const char* old_char = c_char;
+  if (ofs_match_substr("dist_schedule", false))
+  {
+    ompattribute->addClause(e_dist_schedule);
+    omptype = e_dist_schedule;
+    if (!ofs_match_char('('))
+    {
+      printf("error in dist_schedule(xx) match: no starting '(' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    if (ofs_match_substr("static", false))
+      ompattribute->addExpression(e_dist_schedule, "static", NULL);
+    else if (ofs_match_substr("dynamic", false))
+      ompattribute->addExpression(e_dist_schedule, "dynamic", NULL);
+    else
+    {
+      printf("error in dist_schedule(value) match: no legal value is found for %s\n", old_char);
+      ROSE_ABORT();
+    }
+    if (!ofs_match_char(')'))
+    {
+      printf("error in dist_schedule() match: no end ')' is found for %s.\n", old_char);
+      ROSE_ABORT();
+    }
+    return true;
+  }
+  c_char = old_char;
+  return false;
 }
 
 //! Match 'naked' clauses: such as ordered_clause, nowait, and untied
@@ -897,24 +1078,37 @@ static bool ofs_match_omp_directive_end()
 }
 
 
-//a bit vector for all possible OpenMP Fortran clauses: 
-//  15 in total for OpenMP 3.0
+//a bit vector for all possible OpenMP Fortran clauses:
+//  15 in total for OpenMP 3.0, extended for OpenMP 4.5 keywords
 // in alphabet order
-#define BV_CLAUSE_COLLAPSE      (1<<0)
-#define BV_CLAUSE_COPYIN        (1<<1)
-#define BV_CLAUSE_COPYPRIVATE   (1<<2)
-#define BV_CLAUSE_DEFAULT       (1<<3)
-#define BV_CLAUSE_FIRSTPRIVATE  (1<<4)
-#define BV_CLAUSE_IF            (1<<5)
-#define BV_CLAUSE_LASTPRIVATE   (1<<6)
-#define BV_CLAUSE_NOWAIT        (1<<7)
-#define BV_CLAUSE_NUM_THREADS   (1<<8)
-#define BV_CLAUSE_ORDERED       (1<<9)
-#define BV_CLAUSE_PRIVATE       (1<<10)
-#define BV_CLAUSE_REDUCTION     (1<<11)
-#define BV_CLAUSE_SCHEDULE      (1<<12)
-#define BV_CLAUSE_SHARED        (1<<13)
-#define BV_CLAUSE_UNTIED        (1<<14)
+#define BV_CLAUSE_ALIGNED       (1<<0)
+#define BV_CLAUSE_COLLAPSE      (1<<1)
+#define BV_CLAUSE_COPYIN        (1<<2)
+#define BV_CLAUSE_COPYPRIVATE   (1<<3)
+#define BV_CLAUSE_DEFAULT       (1<<4)
+#define BV_CLAUSE_DEFAULTMAP    (1<<5)
+#define BV_CLAUSE_DEPEND        (1<<6)
+#define BV_CLAUSE_DIST_SCHEDULE (1<<7)
+#define BV_CLAUSE_FIRSTPRIVATE  (1<<8)
+#define BV_CLAUSE_GRAINSIZE     (1<<9)
+#define BV_CLAUSE_IF            (1<<10)
+#define BV_CLAUSE_LASTPRIVATE   (1<<11)
+#define BV_CLAUSE_LINEAR        (1<<12)
+#define BV_CLAUSE_NOWAIT        (1<<13)
+#define BV_CLAUSE_NUM_TEAMS     (1<<14)
+#define BV_CLAUSE_NUM_THREADS   (1<<15)
+#define BV_CLAUSE_NUM_TASKS     (1<<16)
+#define BV_CLAUSE_ORDERED       (1<<17)
+#define BV_CLAUSE_PRIVATE       (1<<18)
+#define BV_CLAUSE_PROC_BIND     (1<<19)
+#define BV_CLAUSE_REDUCTION     (1<<20)
+#define BV_CLAUSE_SAFELEN       (1<<21)
+#define BV_CLAUSE_SCHEDULE      (1<<22)
+#define BV_CLAUSE_SHARED        (1<<23)
+#define BV_CLAUSE_SIMDLEN       (1<<24)
+#define BV_CLAUSE_THREAD_LIMIT  (1<<25)
+#define BV_CLAUSE_UNIFORM       (1<<26)
+#define BV_CLAUSE_UNTIED        (1<<27)
 
 // common bit vector values for some directive's allowed clauses
 #define BV_OMP_PARALLEL_CLAUSES \
@@ -944,11 +1138,34 @@ static bool ofs_match_omp_directive_end()
  
 #define BV_OMP_TASK_CLAUSES \
 (BV_CLAUSE_DEFAULT \
+|BV_CLAUSE_DEPEND \
 |BV_CLAUSE_FIRSTPRIVATE \
 |BV_CLAUSE_IF \
 |BV_CLAUSE_PRIVATE \
 |BV_CLAUSE_SHARED \
 |BV_CLAUSE_UNTIED )
+
+#define BV_OMP_TASKLOOP_CLAUSES \
+(BV_OMP_TASK_CLAUSES \
+|BV_CLAUSE_COLLAPSE \
+|BV_CLAUSE_GRAINSIZE \
+|BV_CLAUSE_NUM_TASKS \
+|BV_CLAUSE_PRIVATE \
+|BV_CLAUSE_SCHEDULE )
+
+#define BV_OMP_TEAMS_CLAUSES \
+(BV_CLAUSE_DEFAULTMAP \
+|BV_CLAUSE_NUM_TEAMS \
+|BV_CLAUSE_PRIVATE \
+|BV_CLAUSE_SHARED \
+|BV_CLAUSE_THREAD_LIMIT )
+
+#define BV_OMP_DISTRIBUTE_CLAUSES \
+(BV_CLAUSE_DIST_SCHEDULE \
+|BV_CLAUSE_PRIVATE \
+|BV_CLAUSE_FIRSTPRIVATE \
+|BV_CLAUSE_LASTPRIVATE \
+|BV_CLAUSE_SHARED )
 
 
 //! Try to match a set of clauses indicated by a bit vector
@@ -1191,7 +1408,10 @@ OmpSupport::OmpAttribute* omp_fortran_parse(SgNode* locNode, const char* str)
     // !$omp do
     else if (ofs_match_substr("do"))
     {
-      ompattribute = buildOmpAttribute(e_do, c_sgnode, true);
+      if (ofs_match_substr("simd", false))
+        ompattribute = buildOmpAttribute(e_do_simd, c_sgnode, true);
+      else
+        ompattribute = buildOmpAttribute(e_do, c_sgnode, true);
       ofs_match_omp_clauses(BV_OMP_DO_CLAUSES);
     }
     // !$omp end critical/do/master/ordered/ parallel [do|sections|workshare|]
@@ -1275,6 +1495,30 @@ OmpSupport::OmpAttribute* omp_fortran_parse(SgNode* locNode, const char* str)
         ompattribute = buildOmpAttribute(e_end_task, c_sgnode, true);
         // nothing further
       }
+      //!$omp end taskloop
+      else if (ofs_match_substr("taskloop"))
+      {
+        ompattribute = buildOmpAttribute(e_end_taskloop, c_sgnode, true);
+        // nothing further
+      }
+      //!$omp end taskgroup
+      else if (ofs_match_substr("taskgroup"))
+      {
+        ompattribute = buildOmpAttribute(e_end_taskgroup, c_sgnode, true);
+        // nothing further
+      }
+      //!$omp end teams
+      else if (ofs_match_substr("teams"))
+      {
+        ompattribute = buildOmpAttribute(e_end_teams, c_sgnode, true);
+        // nothing further
+      }
+      //!$omp end distribute
+      else if (ofs_match_substr("distribute"))
+      {
+        ompattribute = buildOmpAttribute(e_end_distribute, c_sgnode, true);
+        // nothing further
+      }
       //!$omp end workshare
       else if (ofs_match_substr("workshare"))
       {
@@ -1313,6 +1557,50 @@ OmpSupport::OmpAttribute* omp_fortran_parse(SgNode* locNode, const char* str)
       ompattribute = buildOmpAttribute(e_ordered_directive, c_sgnode, true);
       // nothing further
     }
+    else if (ofs_match_substr("taskloop"))
+    {
+      if (ofs_match_substr("simd", false))
+        ompattribute = buildOmpAttribute(e_taskloop_simd, c_sgnode, true);
+      else
+        ompattribute = buildOmpAttribute(e_taskloop, c_sgnode, true);
+      ofs_match_omp_clauses(BV_OMP_TASKLOOP_CLAUSES);
+    }
+    else if (ofs_match_substr("taskgroup"))
+    {
+      ompattribute = buildOmpAttribute(e_taskgroup, c_sgnode, true);
+      ofs_match_omp_clauses(BV_OMP_TASK_CLAUSES);
+    }
+    else if (ofs_match_substr("teams"))
+    {
+      ompattribute = buildOmpAttribute(e_teams, c_sgnode, true);
+      ofs_match_omp_clauses(BV_OMP_TEAMS_CLAUSES);
+    }
+    else if (ofs_match_substr("distribute"))
+    {
+      ofs_skip_whitespace();
+      if (ofs_match_substr("parallel", false))
+      {
+        ofs_skip_whitespace();
+        if (ofs_match_substr("do", false))
+        {
+          if (ofs_match_substr("simd", false))
+            ompattribute = buildOmpAttribute(e_distribute_parallel_do_simd, c_sgnode, true);
+          else
+            ompattribute = buildOmpAttribute(e_distribute_parallel_do, c_sgnode, true);
+        }
+        else
+          ompattribute = buildOmpAttribute(e_distribute, c_sgnode, true);
+      }
+      else if (ofs_match_substr("simd", false))
+      {
+        ompattribute = buildOmpAttribute(e_distribute_simd, c_sgnode, true);
+      }
+      else
+      {
+        ompattribute = buildOmpAttribute(e_distribute, c_sgnode, true);
+      }
+      ofs_match_omp_clauses(BV_OMP_DISTRIBUTE_CLAUSES);
+    }
     else
       if (ofs_match_substr("parallel",false)) //don't have to have a space after it
       {
@@ -1320,7 +1608,10 @@ OmpSupport::OmpAttribute* omp_fortran_parse(SgNode* locNode, const char* str)
         // !$omp parallel do
         if (ofs_match_substr("do"))
         {
-          ompattribute = buildOmpAttribute(e_parallel_do, c_sgnode, true);
+          if (ofs_match_substr("simd", false))
+            ompattribute = buildOmpAttribute(e_parallel_do_simd, c_sgnode, true);
+          else
+            ompattribute = buildOmpAttribute(e_parallel_do, c_sgnode, true);
           ofs_match_omp_clauses(BV_OMP_PARALLEL_CLAUSES|BV_OMP_DO_CLAUSES);
         }
         //!$omp parallel sections       
@@ -1365,6 +1656,22 @@ OmpSupport::OmpAttribute* omp_fortran_parse(SgNode* locNode, const char* str)
       {
         ompattribute = buildOmpAttribute(e_task, c_sgnode, true);
         ofs_match_omp_clauses(BV_OMP_TASK_CLAUSES);
+      }
+    //!$omp simd
+      else if (ofs_match_substr("simd"))
+      {
+        ompattribute = buildOmpAttribute(e_simd, c_sgnode, true);
+        ofs_match_omp_clauses(BV_CLAUSE_ALIGNED|BV_CLAUSE_LINEAR|BV_CLAUSE_NUM_THREADS|BV_CLAUSE_PRIVATE|BV_CLAUSE_REDUCTION|BV_CLAUSE_SCHEDULE|BV_CLAUSE_SIMDLEN|BV_CLAUSE_SAFELEN|BV_CLAUSE_UNIFORM);
+      }
+    //!$omp declare simd
+      else if (ofs_match_substr("declare"))
+      {
+        ofs_skip_whitespace();
+        if (ofs_match_substr("simd"))
+        {
+          ompattribute = buildOmpAttribute(e_declare_simd, c_sgnode, true);
+          ofs_match_omp_clauses(BV_CLAUSE_ALIGNED|BV_CLAUSE_LINEAR|BV_CLAUSE_SIMDLEN|BV_CLAUSE_SAFELEN);
+        }
       }
     //!$omp taskwait
       else if (ofs_match_substr("taskwait"))

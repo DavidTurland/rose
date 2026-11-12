@@ -281,6 +281,11 @@ option(BOOST_USE_MULTITHREADED "Should Boost multithreaded libraries be used?" O
 if(DEFINED ENV{BOOST_HOME})
   set(BOOST_ROOT "$ENV{BOOST_HOME}")
 endif()
+set(BOOST_REQUIRED_PACKAGES chrono date_time filesystem iostreams process program_options random regex system wave thread serialization)
+if(Boost_VERSION VERSION_GREATER_EQUAL "1.88.0") 
+  set(BOOST_REQUIRED_PACKAGES ${BOOST_REQUIRED_PACKAGES} process)
+endif()
+
 
 # Boost 1.47 is no longer supported by ROSE, but is what's installed on Jenkins' CMake test machine. This should
 #        be changed to the actual minimum supported version once Pei-Hung upgrades the machine. [Matzke 2019-01-21]
@@ -295,7 +300,7 @@ endif()
 # REQUIRED clause after the first one has succeeded.  That way the first clause checks for requires components, and the
 # second can check again including optional components.  If the version of cmake is high enough you can use an
 # OPTIONAL_COMPONENTS clause instead, but that wasn't introduced until 3.11."
-find_package(Boost REQUIRED COMPONENTS chrono date_time filesystem iostreams program_options random regex system wave thread serialization)
+find_package(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_PACKAGES})
 if(WIN32) 
   set(BOOST_LIBRARYDIR ${Boost_LIBRARY_DIRS})
   set(BOOST_INCLUDEDIR ${Boost_INCLUDE_DIRS}/)
@@ -509,7 +514,15 @@ if(DEFINED CACHE{ENABLE-JAVA})
   message(DEPRECATION "ENABLE-JAVA is deprecated. Use ENABLE_JAVA instead. Example: cmake -DENABLE_JAVA=${ENABLE-JAVA} ...")
   set(ENABLE_JAVA ${ENABLE-JAVA} CACHE BOOL "Enable Java analysis" FORCE)
 endif()
+
+option(WITH_JAVA "with java" OFF)
+
 if(ENABLE_JAVA)
+  set(WITH_JAVA ON)
+  set(ROSE_BUILD_JAVA_LANGUAGE_SUPPORT 1)
+endif()
+
+if(WITH_JAVA)
   message(STATUS "Looking for JAVA ...")
   if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR VERBOSE)
     message(STATUS "JAVA_ROOT is: ${JAVA_ROOT}")
@@ -520,7 +533,6 @@ if(ENABLE_JAVA)
   find_program(GCJ gcj)
   find_program(GCJH gcjh)
   find_package(JNI)
-  set(ROSE_BUILD_JAVA_LANGUAGE_SUPPORT 1)
   set(USE_ROSE_INTERNAL_JAVA_SUPPORT 1)
   get_filename_component(BACKEND_JAVA_COMPILER ${Java_JAVAC_EXECUTABLE} NAME)
 endif()
@@ -545,9 +557,9 @@ if(DEFINED CACHE{ENABLE-FORTRAN})
   set(ENABLE_FORTRAN ${ENABLE-FORTRAN} CACHE BOOL "Enable Fortran analysis." FORCE)
 endif()
 if(ENABLE_FORTRAN)
-  if(NOT ENABLE_JAVA)
-    message(FATAL_ERROR "Fortran analysis also requires Java analysis.  Either
-    turn on ENABLE_JAVA, or turn off ENABLE_FORTRAN")
+  if(NOT WITH_JAVA)
+    message(FATAL_ERROR "Fortran analysis also requires Java .  Either
+    turn on WITH_JAVA, or turn off ENABLE_FORTRAN")
   endif()
   set(ROSE_BUILD_FORTRAN_LANGUAGE_SUPPORT 1)
   enable_language(Fortran)
@@ -721,8 +733,8 @@ if(NOT ENABLE_BINARY_ANALYSIS AND NOT ENABLE_C AND NOT ENABLE_CUDA AND NOT ENABL
     "    Enables analysis of binary executables and object files. Requires only Boost.\n"
     "    Portable and well-supported on RHEL and Debian-based systems.\n"
     "  Fortran Analysis:\n"
-    "    cmake -DENABLE_FORTRAN=ON -DENABLE_JAVA=ON ...\n"
-    "    Enables analysis of Fortran code. Requires Java analysis to be enabled.\n"
+    "    cmake -DENABLE_FORTRAN=ON -DWITH_JAVA=ON ...\n"
+    "    Enables analysis of Fortran code. Requires Java to be enabled.\n"
     "  Ada Analysis:\n"
     "    cmake -DENABLE_ADA=ON ...\n"
     "    Enables analysis of Ada code. Experimental feature.\n"
@@ -793,18 +805,33 @@ if(NOT have_EDG_source AND NOT ENABLE_CLANG_FRONTEND)
   if(ENABLE_C)
     set(BINARY_EDG 1)
     if(NOT WIN32)
-      message(FATAL_ERROR "EDG binary download not yet supported, please use EDG git submodule if in ROSE team, otherwise use autotools")
-      message(STATUS "EDG - downloading EDG-${EDG_VERSION} binary tar file")
-      if(EXISTS "${PROJECT_BINARY_DIR}/src/frontend/CxxFrontend/EDG.tar.gz")
-        execute_process(COMMAND "tar" "-zxvf" "-C" "${PROJECT_BINARY_DIR}/src/frontend/CxxFrontend/EDG")
+      set(EDG_TGZ_PATH     "${PROJECT_BINARY_DIR}/src/frontend/CxxFrontend/EDG.tar.gz")
+      set(EDG_EXTRACT_PATH "${PROJECT_BINARY_DIR}/lib")
+      message(STATUS "EDG binary download not yet supported, please use EDG git submodule if in ROSE team, otherwise use autotools")
+      message(STATUS "EDG - will be downloading EDG-${EDG_VERSION} binary tar file ${EDG_TGZ_PATH}")
+
+      if(EXISTS ${EDG_TGZ_PATH})
+        #execute_process(COMMAND "tar" "-zxvf" ${EDG_TGZ_PATH}  "-C" ${EDG_EXTRACT_PATH} )
+
+        #find_file(EDG_STATIC_LIB_PATH 
+        #          NAMES "libroseEDG.a"
+        #          PATHS ${EDG_EXTRACT_PATH})
+        message(STATUS "Found EDG static lib ${EDG_STATIC_LIB_PATH}")
+        #file(COPY ${EDG_STATIC_LIB_PATH}
+        #     DESTINATION "${PROJECT_BINARY_DIR}/lib")
       else()
-      # no need to display this message after the file has been downloaded
-      if(NOT EXISTS "${PROJECT_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs")
-        message(WARNING "At build time, CMake will attempt to download a required library tarball.\n"
-                        "Please note that EDG binary tarballs are available for only certain configurations.")
+        # no need to display this message after the file has been downloaded
+        if(NOT EXISTS "${PROJECT_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs")
+          message(WARNING "At build time, CMake will attempt to download a required library tarball.\n"
+                          "Please note that EDG binary tarballs are available for only certain configurations.")
+        endif()
+        include(${PROJECT_SOURCE_DIR}/cmake/DownloadEDG.cmake)
       endif()
-      include(${PROJECT_SOURCE_DIR}/cmake/DownloadEDG.cmake)
-      endif()
+      add_library(EDG STATIC IMPORTED)
+      add_dependencies(EDG EDGSignature)
+      set_property(TARGET EDG PROPERTY IMPORTED_LOCATION
+      ${CMAKE_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs/libroseEDG.a)
+
     endif()
   endif()
 endif()
@@ -832,7 +859,7 @@ find_package(Perl)
 # Miscellaneous user-selectable features
 ########################################################################################################################
 
-option(ENABLE_EXAMPLE_TRANSLATORS_DIRECTORY "Enable compilation and testing of exampleTranslators directory" OFF)
+option(ENABLE_EXAMPLE_TRANSLATORS_DIRECTORY "Enable compilation and testing of exampleTranslators directory" ON)
 if(DEFINED CACHE{ENABLE-EXAMPLE-TRANSLATORS-DIRECTORY})
   message(DEPRECATION "ENABLE-EXAMPLE-TRANSLATORS-DIRECTORY is deprecated. Use ENABLE_EXAMPLE_TRANSLATORS_DIRECTORY instead. Example: cmake -DENABLE_EXAMPLE_TRANSLATORS_DIRECTORY=${ENABLE-EXAMPLE-TRANSLATORS-DIRECTORY} ...")
   set(ENABLE_EXAMPLE_TRANSLATORS_DIRECTORY ${ENABLE-EXAMPLE-TRANSLATORS-DIRECTORY} CACHE BOOL "Enable compilation and testing of exampleTranslators directory" FORCE)
@@ -1881,6 +1908,9 @@ endif()
 foreach(comp chrono date_time filesystem iostreams program_options random regex system thread wave serialization)
   set(ROSE_PC_LIBS "${ROSE_PC_LIBS} -lboost_${comp}")
 endforeach()
+if(Boost_VERSION VERSION_GREATER_EQUAL "1.88.0") 
+  set(ROSE_PC_LIBS "${ROSE_PC_LIBS} -lboost_process")
+endif()
 
 # Add pthread flag if Boost threading is used
 if(Boost_THREAD_FOUND)

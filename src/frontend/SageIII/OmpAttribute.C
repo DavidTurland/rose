@@ -836,6 +836,31 @@ namespace OmpSupport
       case e_depend_out:   result = "out";   break;
       case e_depend_inout: result = "inout";   break;
 
+      case e_grainsize: result = "grainsize"; break;
+      case e_num_tasks: result = "num_tasks"; break;
+      case e_thread_limit: result = "thread_limit"; break;
+      case e_num_teams: result = "num_teams"; break;
+      case e_defaultmap: result = "defaultmap"; break;
+      case e_dist_schedule: result = "dist_schedule"; break;
+
+      case e_taskloop: result = "taskloop"; break;
+      case e_taskloop_simd: result = "taskloop simd"; break;
+      case e_taskgroup: result = "taskgroup"; break;
+      case e_teams: result = "teams"; break;
+      case e_distribute: result = "distribute"; break;
+      case e_distribute_parallel_do: result = "distribute parallel do"; break;
+      case e_distribute_simd: result = "distribute simd"; break;
+      case e_distribute_parallel_do_simd: result = "distribute parallel do simd"; break;
+      case e_do_simd: result = "do simd"; break;
+      case e_parallel_do_simd: result = "parallel do simd"; break;
+      case e_end_taskloop: result = "end taskloop"; break;
+      case e_end_taskgroup: result = "end taskgroup"; break;
+      case e_end_teams: result = "end teams"; break;
+      case e_end_distribute: result = "end distribute"; break;
+      case e_end_distribute_parallel_do: result = "end distribute parallel do"; break;
+      case e_end_distribute_simd: result = "end distribute simd"; break;
+      case e_end_distribute_parallel_do_simd: result = "end distribute parallel do simd"; break;
+
       case e_final : result = "final";   break;
       case e_priority: result = "priority";   break;
 
@@ -904,6 +929,23 @@ namespace OmpSupport
       case e_target_update: //TODO more later
       case e_simd:
       case e_declare_simd:
+      case e_taskloop:
+      case e_taskloop_simd:
+      case e_taskgroup:
+      case e_teams:
+      case e_distribute:
+      case e_distribute_parallel_do:
+      case e_distribute_simd:
+      case e_distribute_parallel_do_simd:
+      case e_do_simd:
+      case e_parallel_do_simd:
+      case e_end_taskloop:
+      case e_end_taskgroup:
+      case e_end_teams:
+      case e_end_distribute:
+      case e_end_distribute_parallel_do:
+      case e_end_distribute_simd:
+      case e_end_distribute_parallel_do_simd:
 
         result = true;
         break;
@@ -947,6 +989,27 @@ namespace OmpSupport
         break;
       case e_end_task:
         begin_enum = e_task;
+        break;
+      case e_end_taskloop:
+        begin_enum = e_taskloop;
+        break;
+      case e_end_taskgroup:
+        begin_enum = e_taskgroup;
+        break;
+      case e_end_teams:
+        begin_enum = e_teams;
+        break;
+      case e_end_distribute:
+        begin_enum = e_distribute;
+        break;
+      case e_end_distribute_parallel_do:
+        begin_enum = e_distribute_parallel_do;
+        break;
+      case e_end_distribute_simd:
+        begin_enum = e_distribute_simd;
+        break;
+      case e_end_distribute_parallel_do_simd:
+        begin_enum = e_distribute_parallel_do_simd;
         break;
       case e_end_master:
         begin_enum = e_master;
@@ -1026,7 +1089,31 @@ namespace OmpSupport
         break;
       case e_task:
         rt = e_end_task;
-        break; 
+        break;
+      case e_taskloop:
+        rt = e_end_taskloop;
+        break;
+      case e_taskloop_simd:
+        rt = e_end_taskloop;
+        break;
+      case e_taskgroup:
+        rt = e_end_taskgroup;
+        break;
+      case e_teams:
+        rt = e_end_teams;
+        break;
+      case e_distribute:
+        rt = e_end_distribute;
+        break;
+      case e_distribute_parallel_do:
+        rt = e_end_distribute_parallel_do;
+        break;
+      case e_distribute_simd:
+        rt = e_end_distribute_simd;
+        break;
+      case e_distribute_parallel_do_simd:
+        rt = e_end_distribute_parallel_do_simd;
+        break;
       case e_master:
         rt = e_end_master;
         break;
@@ -1065,6 +1152,13 @@ namespace OmpSupport
       case e_end_sections:
       case e_end_single:
       case e_end_task:
+      case e_end_taskloop:
+      case e_end_taskgroup:
+      case e_end_teams:
+      case e_end_distribute:
+      case e_end_distribute_parallel_do:
+      case e_end_distribute_simd:
+      case e_end_distribute_parallel_do_simd:
       case e_end_workshare:
         rt = true; 
         break; 
@@ -1185,6 +1279,12 @@ namespace OmpSupport
       case e_notinbranch:
 
       case e_depend:
+      case e_grainsize:
+      case e_num_tasks:
+      case e_thread_limit:
+      case e_num_teams:
+      case e_defaultmap:
+      case e_dist_schedule:
         result = true; 
         break;
       default:

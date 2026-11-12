@@ -21,11 +21,11 @@ endif()
 # Detect compiler by asking GCC what version it is
 set(compiler "")
 set(min_supported "4.4")
-set(max_supported "5.2")
-execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
+set(max_supported "11.5")
+execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpfullversion
                 OUTPUT_VARIABLE GCC_version)
 # strip patch version; we only care about major & minor
-string(REGEX MATCH "([0-9]\\.[0-9])" GCC_version ${GCC_version})
+string(REGEX MATCH "([0-9]+\\.[0-9])" GCC_version ${GCC_version})
 
 if(GCC_version VERSION_GREATER max_supported OR
    GCC_version VERSION_LESS min_supported)
@@ -33,7 +33,11 @@ if(GCC_version VERSION_GREATER max_supported OR
     "ROSE only supports GCC versions ${min_supported} to ${max_supported}.\n"
     "<gcc -dumpversion> reported ${GCC_version}")
 endif()
-if(GCC_version VERSION_EQUAL 5.2)
+if(GCC_version VERSION_EQUAL 11.5)
+  set(compiler "gnu-11")
+elseif(GCC_version VERSION_EQUAL 10.5)
+  set(compiler "gnu-10")
+elseif(GCC_version VERSION_EQUAL 5.2)
   set(compiler "gnu-5.2")
 elseif(GCC_version VERSION_EQUAL 5.1)
   set(compiler "gnu-5.1")
@@ -100,8 +104,8 @@ add_custom_target( EDGSignature
 #  DEPENDS EDGSignature 
 #  )
 
-add_library(EDG STATIC IMPORTED)
-add_dependencies(EDG EDGSignature)
-set_property(TARGET EDG PROPERTY IMPORTED_LOCATION
-  ${CMAKE_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs/libroseEDG.a)
+#add_library(EDG STATIC IMPORTED)
+#add_dependencies(EDG EDGSignature)
+#set_property(TARGET EDG PROPERTY IMPORTED_LOCATION
+#  ${CMAKE_BINARY_DIR}/src/frontend/CxxFrontend/EDG/.libs/libroseEDG.a)
 

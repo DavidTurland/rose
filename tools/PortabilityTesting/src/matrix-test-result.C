@@ -17,7 +17,11 @@ static const char *gDescription =
 #include <rose_getline.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/process.hpp>
-
+#if BOOST_VERSION >= 108800
+#  include <boost/process/v1/child.hpp>
+#  include <boost/process/v1/io.hpp>
+#  include <boost/process/v1/pipe.hpp>
+#endif
 using namespace Rose;
 using namespace Sawyer::Message::Common;
 namespace DB = Sawyer::Database;
@@ -143,9 +147,13 @@ static std::string
 getUserName() {
     if (const char *s = getenv("LOGNAME"))
         return s;
-
+#if BOOST_VERSION >= 108800
+    boost::process::v1::ipstream pipe_stream;
+    boost::process::v1::child c("whoami", boost::process::v1::std_out > pipe_stream);
+#else
     boost::process::ipstream pipe_stream;
     boost::process::child c("whoami", boost::process::std_out > pipe_stream);
+#endif
     std::string str;
     if (pipe_stream && std::getline(pipe_stream, str) && !str.empty())
         return boost::trim_copy(str);

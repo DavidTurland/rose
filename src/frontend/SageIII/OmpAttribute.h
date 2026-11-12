@@ -58,6 +58,26 @@ namespace OmpSupport
     e_begin, // 10/29/2015, experimental begin/end directives for SPMD code blocks, without changing variable scopes
     e_end,
 
+    // OpenMP 4.5 directives
+    e_taskloop,
+    e_taskloop_simd,
+    e_taskgroup,
+    e_teams,
+    e_distribute,
+    e_distribute_parallel_do,
+    e_distribute_simd,
+    e_distribute_parallel_do_simd,
+    e_do_simd,
+    e_parallel_do_simd,
+
+    e_end_taskloop,
+    e_end_taskgroup,
+    e_end_teams,
+    e_end_distribute,
+    e_end_distribute_parallel_do,
+    e_end_distribute_simd,
+    e_end_distribute_parallel_do_simd,
+
     e_threadprivate,
     e_parallel_for,
     e_parallel_for_simd,
@@ -112,6 +132,12 @@ namespace OmpSupport
     e_notinbranch,
 
     e_depend, // OpenMP 4.0 task clauses
+    e_grainsize,
+    e_num_tasks,
+    e_thread_limit,
+    e_num_teams,
+    e_defaultmap,
+    e_dist_schedule,
 
     // Simple values for some clauses
 
