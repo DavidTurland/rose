@@ -1,5 +1,6 @@
 execute_process(COMMAND cat ${CMAKE_ARGV3} OUTPUT_VARIABLE signature)
 message("signature='${signature}'")
+message("CMAKE_ARGV3='${CMAKE_ARGV3}'")
 message("CMAKE_ARGV4='${CMAKE_ARGV4}'")
 message("CMAKE_ARGV5='${CMAKE_ARGV5}'")
 message("CMAKE_ARGV6='${CMAKE_ARGV6}'")
